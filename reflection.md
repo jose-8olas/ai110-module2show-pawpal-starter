@@ -31,6 +31,8 @@ Yes. I chnaged it by adding prefernces attribute so it can consider the owner's 
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
 
+My system finds any mactching date and time to detect conflicts. Although, this is very easy to understand, there is a tradeoff. If task overlaps during a time duration, it won't detect it. If one task starts at 8:00 am and another starts at 8:15 and each of their durations are approxiamtely 30 minutes, these two tasks conflict.
+
 ---
 
 ## 3. AI Collaboration
