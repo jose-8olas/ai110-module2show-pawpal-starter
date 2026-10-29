@@ -15,6 +15,8 @@
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
 
+Yes. I chnaged it by adding prefernces attribute so it can consider the owner's preferinces for budiling a plan. Additionally, I also added sort_tasks(), detect_conflicts(), and generate_daily_plan(). Mostly kept the same structure for four classes.
+
 ---
 
 ## 2. Scheduling Logic and Tradeoffs

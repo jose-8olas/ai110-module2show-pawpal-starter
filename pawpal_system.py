@@ -32,9 +32,15 @@ class Pet:
 class Owner:
     """Stores owner information and manages pets."""
 
-    def __init__(self, owner_id: str, name: str) -> None:
+    def __init__(
+        self,
+        owner_id: str,
+        name: str,
+        preferences: dict | None = None
+    ) -> None:
         self.owner_id = owner_id
         self.name = name
+        self.preferences = preferences if preferences is not None else {}
         self.pets: list[Pet] = []
 
     def add_pet(self, pet: Pet) -> None:
@@ -54,11 +60,11 @@ class Scheduler:
     def schedule_task(self, task: Task) -> None:
         pass
 
-    def sort_tasks(self) -> None:
+    def sort_tasks(self) -> list[Task]:
         pass
 
-    def detect_conflicts(self) -> None:
+    def detect_conflicts(self) -> list[Task]:
         pass
 
-    def generate_daily_plan(self) -> None:
+    def generate_daily_plan(self) -> list[Task]:
         pass
