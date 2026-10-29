@@ -6,6 +6,9 @@
 
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
+  The UML Design will include Owner, Tasks, Pets, and Scheduler. The Owner class will contain information about the owner and corresponding pets. The Task class will contain information from specific activities, title duration, etc. The Pet class will contain information regarding the pet and tasks assigned to pets. Lasty the Scheduler tasks will manage all tasks keeping track of the times
+
+3 core actions use should perform: Adding pets, creating and managing tasks, generate daily plan possibly
 
 **b. Design changes**
 
