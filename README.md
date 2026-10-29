@@ -42,6 +42,26 @@ pip install -r requirements.txt
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
 
+## Smarter Schdueling
+
+Using Scheduler.sort_by_time() to sort tasks by time in ascending order.
+
+FILTERING:
+Other important filtering tasks include Scheduler.filter_by_status and Scheduler.filter_by_pet.
+
+The Scheduler.filter_by_status will return tasks that based on the status. If it is complete or not.
+
+Scheduler.filter_by_pet will return tasks based on a pet.
+
+CONFLICTS:
+Scheduler.detect_time_conflicts() will check if incomplete tasks have same start time and dates.
+
+Scheduler.detect_conflicts() checks if tasks exceed avaiable time budget.
+
+Scheduler.complete_task() will set task as complete and will create a new instance if it is a recurring task
+
+Scheduler.generate_daily_plan() will display incomplete tasks by scheduled time
+
 ## 🖥️ Sample Output
 
 Paste a sample of your app's CLI or Streamlit output here so a reader can see what a generated plan looks like:
@@ -74,12 +94,12 @@ Sample test output:
 
 > Fill in once you've implemented scheduling logic.
 
-| Feature | Method(s) | Notes |
-|---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Feature           | Method(s) | Notes                             |
+| ----------------- | --------- | --------------------------------- |
+| Task sorting      |           | e.g., by priority, duration       |
+| Filtering         |           | e.g., skip tasks if time runs out |
+| Conflict handling |           | e.g., overlapping time slots      |
+| Recurring tasks   |           | e.g., daily vs. weekly            |
 
 ## 📸 Demo Walkthrough
 
@@ -91,4 +111,4 @@ Describe your app in numbered steps so a reader can follow along without watchin
 4. <!-- Describe this step -->
 5. <!-- Add more steps as needed -->
 
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+**Screenshot or video** _(optional)_: <!-- Insert a screenshot or link to a demo video here -->
