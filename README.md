@@ -42,26 +42,6 @@ pip install -r requirements.txt
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
 
-## Smarter Schdueling
-
-Using Scheduler.sort_by_time() to sort tasks by time in ascending order.
-
-FILTERING:
-Other important filtering tasks include Scheduler.filter_by_status and Scheduler.filter_by_pet.
-
-The Scheduler.filter_by_status will return tasks that based on the status. If it is complete or not.
-
-Scheduler.filter_by_pet will return tasks based on a pet.
-
-CONFLICTS:
-Scheduler.detect_time_conflicts() will check if incomplete tasks have same start time and dates.
-
-Scheduler.detect_conflicts() checks if tasks exceed avaiable time budget.
-
-Scheduler.complete_task() will set task as complete and will create a new instance if it is a recurring task
-
-Scheduler.generate_daily_plan() will display incomplete tasks by scheduled time
-
 ## 🖥️ Sample Output
 
 Paste a sample of your app's CLI or Streamlit output here so a reader can see what a generated plan looks like:
@@ -76,30 +56,70 @@ Paste a sample of your app's CLI or Streamlit output here so a reader can see wh
 
 ## 🧪 Testing PawPal+
 
+Tests:
+
+1. Verifies that task is completed
+2. Checks that tasks can be added to pets
+3. Checks if tasks are sorted by scheduled time
+4. Checks that completeing a daily task creates new instance for it later
+5. Checks if tasks with same time/date are detetced correctly
+
 ```bash
 # Run the full test suite:
 pytest
 
 # Run with coverage:
-pytest --cov
+python -m pytest --cov=pawpal_system
 ```
 
-Sample test output:
+Sample test output for pytest:
 
 ```
-# Paste your pytest output here
+================================================ test session starts ================================================
+platform win32 -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0
+rootdir: C:\Users\15612\Downloads\ai110-module2show-pawpal-starter
+plugins: anyio-4.15.1
+collected 5 items
+
+tests\test_pawpal.py .....                                                                                     [100%]
+
+================================================= 5 passed in 0.05s =================================================
 ```
+
+Sample test output for pytest --cov:
+
+```
+================================================ test session starts ================================================
+platform win32 -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0
+rootdir: C:\Users\15612\Downloads\ai110-module2show-pawpal-starter
+plugins: anyio-4.15.1, cov-7.1.0
+collected 5 items
+
+tests\test_pawpal.py .....                                                                                     [100%]
+
+================================================== tests coverage ===================================================
+_________________________________ coverage: platform win32, python 3.13.15-final-0 __________________________________
+
+Name               Stmts   Miss  Cover
+--------------------------------------
+pawpal_system.py      94     19    80%
+--------------------------------------
+TOTAL                 94     19    80%
+================================================= 5 passed in 0.12s =================================================
+```
+
+CONFIDENCE LEVEL OUT OF 5 STARS:
+I would give this around 4/5 starts, since all the tests were passed. However, additional test may be needed to full verify the functionality of the system.
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
-
-| Feature           | Method(s) | Notes                             |
-| ----------------- | --------- | --------------------------------- |
-| Task sorting      |           | e.g., by priority, duration       |
-| Filtering         |           | e.g., skip tasks if time runs out |
-| Conflict handling |           | e.g., overlapping time slots      |
-| Recurring tasks   |           | e.g., daily vs. weekly            |
+| Feature           | Method(s)                                                           | Notes                                                                                                                                                                           |
+| ----------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Task sorting      | `Scheduler.sort_by_time()`                                          | Using `Scheduler.sort_by_time()` to sort tasks by time in ascending order.                                                                                                      |
+| Filtering         | `Scheduler.filter_by_status()`, `Scheduler.filter_by_pet()`         | The `Scheduler.filter_by_status()` will return tasks based on the status, if it is complete or not. `Scheduler.filter_by_pet()` will return tasks based on a pet.               |
+| Conflict handling | `Scheduler.detect_time_conflicts()`, `Scheduler.detect_conflicts()` | `Scheduler.detect_time_conflicts()` will check if incomplete tasks have same start time and dates. `Scheduler.detect_conflicts()` checks if tasks exceed available time budget. |
+| Recurring tasks   | `Scheduler.complete_task()`                                         | `Scheduler.complete_task()` will set task as complete and will create a new instance if it is a recurring task.                                                                 |
+| Daily schedule    | `Scheduler.generate_daily_plan()`                                   | `Scheduler.generate_daily_plan()` will display incomplete tasks by scheduled time.                                                                                              |
 
 ## 📸 Demo Walkthrough
 
