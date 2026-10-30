@@ -39,11 +39,12 @@ with st.expander("Features", expanded=False):
         """
 - Add and manage pets.
 - Create pet care tasks with duration, priority, and scheduled time.
+- Mark tasks as completed.
+- Automatically create the next daily or weekly recurring task.
 - Sort tasks by scheduled time.
 - Filter the daily plan to incomplete tasks.
 - Detect tasks scheduled for the same date and time.
 - Identify tasks that exceed the available time budget.
-- Support daily and weekly recurring tasks through the backend.
 """
     )
 
@@ -221,6 +222,55 @@ else:
     st.info("No tasks yet. Add a task above.")
 
 
+# Update task completion status.
+st.divider()
+st.subheader("Update Task Status")
+
+incomplete_tasks = [
+    (pet, task)
+    for pet in owner.pets
+    for task in pet.get_tasks()
+    if not task.completed
+]
+
+if incomplete_tasks:
+    selected_index = st.selectbox(
+        "Select a task to mark as completed",
+        options=range(len(incomplete_tasks)),
+        format_func=lambda index: (
+            f"{incomplete_tasks[index][0].name} - "
+            f"{incomplete_tasks[index][1].title} "
+            f"({incomplete_tasks[index][1].time})"
+        ),
+        key="task_to_complete"
+    )
+
+    if st.button("Mark as Completed"):
+        selected_task = incomplete_tasks[selected_index][1]
+
+        scheduler = Scheduler(available_time=1440)
+        scheduler.get_tasks_from_owner(owner)
+
+        next_task = scheduler.complete_task(owner, selected_task)
+
+        if next_task is not None:
+            st.success(
+                f"'{selected_task.title}' marked as completed!"
+            )
+            st.info(
+                f"Next occurrence scheduled for {next_task.due_date}."
+            )
+        else:
+            st.success(
+                f"'{selected_task.title}' marked as completed!"
+            )
+            st.caption("No recurring occurrence was created.")
+
+        st.rerun()
+else:
+    st.info("There are no incomplete tasks to update.")
+
+
 st.divider()
 
 
@@ -244,14 +294,8 @@ if st.button("Generate schedule"):
     )
     scheduler.get_tasks_from_owner(owner)
 
-    # Sort tasks by their scheduled time.
-    sorted_tasks = scheduler.sort_by_time()
-
-    # Keep only incomplete tasks in the daily plan.
-    daily_plan = [
-        task for task in sorted_tasks
-        if not task.completed
-    ]
+    # Generate the time-ordered daily plan.
+    daily_plan = scheduler.generate_daily_plan()
 
     if daily_plan:
         st.markdown("### Today's Schedule")

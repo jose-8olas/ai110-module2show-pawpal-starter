@@ -125,10 +125,10 @@ I would give this around 4/5 starts, since all the tests were passed. However, a
 
 Describe your app in numbered steps so a reader can follow along without watching a video:
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+1. Users can add a pet (enter owner name, pet name and species of the pet)
+2. Users can add tasks for specific pets
+3. Users can scheudle whaever time they want
+4. Users can mark as complete, if completed. Note a new task will be automatically created for recurring tasks
+5. At the end, users can generate a plan and conflicting times or other warnings will appear, if any.
 
 **Screenshot or video** _(optional)_: <!-- Insert a screenshot or link to a demo video here -->
