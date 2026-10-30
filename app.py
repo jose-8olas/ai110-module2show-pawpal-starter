@@ -1,8 +1,35 @@
 
 import streamlit as st
-from datetime import time
+from datetime import date, time
 
 from pawpal_system import Owner, Pet, Task, Scheduler
+
+
+# Formatting helper functions
+def format_task_type(task_type):
+    emojis = {
+        "Exercise": "🐕",
+        "Feeding": "🍖",
+        "Medication": "💊",
+        "Grooming": "🛁"
+    }
+    return f"{emojis.get(task_type, '🐾')} {task_type}"
+
+
+def format_priority(priority):
+    indicators = {
+        "high": "🔴 High",
+        "medium": "🟡 Medium",
+        "low": "🟢 Low"
+    }
+    return indicators.get(priority.lower(), priority)
+
+
+def format_status(completed):
+    return "✅ Completed" if completed else "⏳ Pending"
+
+
+DATA_FILE = "data.json"
 
 
 st.set_page_config(
@@ -39,25 +66,40 @@ with st.expander("Features", expanded=False):
         """
 - Add and manage pets.
 - Create pet care tasks with duration, priority, and scheduled time.
+- Choose a due date for each task.
 - Mark tasks as completed.
 - Automatically create the next daily or weekly recurring task.
-- Sort tasks by scheduled time.
-- Filter the daily plan to incomplete tasks.
+- Preserve completed tasks and their original due dates.
+- Sort tasks by priority and scheduled time.
+- Filter tasks by completion status and pet.
 - Detect tasks scheduled for the same date and time.
 - Identify tasks that exceed the available time budget.
+- Save and load pets and tasks using JSON persistence.
+- Display task types using emojis.
+- Show visual priority indicators.
+- Display task completion status.
+- Format task tables for improved readability.
 """
     )
 
 st.divider()
 
 
-# Initialize the Owner once per session.
+# Initialize the Owner and load saved data once per session.
 if "owner" not in st.session_state:
-    st.session_state["owner"] = Owner(
+    owner = Owner(
         owner_id="O001",
         name="Jordan",
         preferences={"preferred_start": "08:00"}
     )
+
+    try:
+        owner.load_from_json(DATA_FILE)
+        st.session_state["owner"] = owner
+        st.session_state["data_loaded"] = True
+    except FileNotFoundError:
+        st.session_state["owner"] = owner
+        st.session_state["data_loaded"] = True
 
 owner = st.session_state["owner"]
 
@@ -92,7 +134,10 @@ if st.button("Add pet"):
         )
 
         owner.add_pet(pet)
+        owner.save_to_json(DATA_FILE)
+
         st.success(f"{pet.name} was added!")
+        st.rerun()
     else:
         st.error("Please enter a pet name.")
 
@@ -165,6 +210,12 @@ if owner.pets:
         key="task_time"
     )
 
+    task_date = st.date_input(
+        "Due date",
+        value=date.today(),
+        key="task_date"
+    )
+
     frequency = st.selectbox(
         "Frequency",
         ["daily", "weekly", "as needed"],
@@ -184,21 +235,24 @@ if owner.pets:
                 duration=int(duration),
                 priority=priority,
                 time=task_time.strftime("%H:%M"),
-                frequency=frequency
+                frequency=frequency,
+                due_date=task_date
             )
 
             selected_pet.add_task(task)
+            owner.save_to_json(DATA_FILE)
 
             st.success(
                 f"Added '{task.title}' to {selected_pet.name}."
             )
+            st.rerun()
         else:
             st.error("Please enter a task title.")
 else:
     st.info("Add a pet before adding tasks.")
 
 
-# Display all existing tasks.
+# Display all existing tasks with formatting.
 st.subheader("All Tasks")
 
 task_rows = []
@@ -208,12 +262,13 @@ for pet in owner.pets:
         task_rows.append({
             "Pet": pet.name,
             "Task": task.title,
+            "Due Date": task.due_date,
             "Duration (min)": task.duration,
-            "Priority": task.priority,
+            "Priority": format_priority(task.priority),
             "Time": task.time,
-            "Type": task.task_type,
+            "Type": format_task_type(task.task_type),
             "Frequency": task.frequency,
-            "Completed": task.completed
+            "Status": format_status(task.completed)
         })
 
 if task_rows:
@@ -240,7 +295,8 @@ if incomplete_tasks:
         format_func=lambda index: (
             f"{incomplete_tasks[index][0].name} - "
             f"{incomplete_tasks[index][1].title} "
-            f"({incomplete_tasks[index][1].time})"
+            f"({incomplete_tasks[index][1].due_date}, "
+            f"{incomplete_tasks[index][1].time})"
         ),
         key="task_to_complete"
     )
@@ -253,18 +309,22 @@ if incomplete_tasks:
 
         next_task = scheduler.complete_task(owner, selected_task)
 
+        # Save the completed task and any recurring occurrence.
+        owner.save_to_json(DATA_FILE)
+
+        st.success(
+            f"'{selected_task.title}' marked as completed!"
+        )
+
         if next_task is not None:
-            st.success(
-                f"'{selected_task.title}' marked as completed!"
-            )
             st.info(
-                f"Next occurrence scheduled for {next_task.due_date}."
+                f"Next {next_task.frequency} occurrence scheduled "
+                f"for {next_task.due_date} at {next_task.time}."
             )
         else:
-            st.success(
-                f"'{selected_task.title}' marked as completed!"
+            st.caption(
+                "No recurring occurrence was created."
             )
-            st.caption("No recurring occurrence was created.")
 
         st.rerun()
 else:
@@ -277,7 +337,7 @@ st.divider()
 # Build a daily schedule using the Scheduler class.
 st.subheader("Build Schedule")
 st.caption(
-    "Generate a sorted daily plan and check for scheduling conflicts."
+    "Generate a priority-based daily plan and check for scheduling conflicts."
 )
 
 available_time = st.number_input(
@@ -294,7 +354,6 @@ if st.button("Generate schedule"):
     )
     scheduler.get_tasks_from_owner(owner)
 
-    # Generate the time-ordered daily plan.
     daily_plan = scheduler.generate_daily_plan()
 
     if daily_plan:
@@ -313,19 +372,20 @@ if st.button("Generate schedule"):
             )
 
             schedule_rows.append({
+                "Due Date": task.due_date,
                 "Time": task.time,
                 "Pet": pet_name_for_task,
                 "Task": task.title,
                 "Duration (min)": task.duration,
-                "Priority": task.priority,
-                "Type": task.task_type
+                "Priority": format_priority(task.priority),
+                "Type": format_task_type(task.task_type),
+                "Status": format_status(task.completed)
             })
 
         st.table(schedule_rows)
     else:
         st.info("There are no incomplete tasks to schedule.")
 
-    # Detect tasks scheduled for the same date and time.
     time_conflicts = scheduler.detect_time_conflicts()
 
     st.markdown("### Same-Time Conflict Check")
@@ -341,7 +401,6 @@ if st.button("Generate schedule"):
     else:
         st.success("No same-time scheduling conflicts detected.")
 
-    # Check tasks against the available-time budget.
     budget_conflicts = scheduler.detect_conflicts()
 
     st.markdown("### Available-Time Check")

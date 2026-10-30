@@ -131,4 +131,43 @@ Describe your app in numbered steps so a reader can follow along without watchin
 4. Users can mark as complete, if completed. Note a new task will be automatically created for recurring tasks
 5. At the end, users can generate a plan and conflicting times or other warnings will appear, if any.
 
+## Persistence Workflow Feature
+
+When the app starts it will load saved information from before. The infomration is saved on a json file so it is not deleted after each session. If new tasks or pets are added, this information will be saved in the json file.
+What I modified:
+pawpal_system.py, app.py, data.json, test_persistence.py
+
+## Schudeing Update with Priority
+
+I updated the scheduling to incorporate priorty and time. We see below that the ones with the highest priority are on top. On top of that, we order them in ascending order of time so 8:00 first then 10:00 for highest priorty and then when we get to the medium priority we also sort by ascending order. Look at the example below:
+
+Example CLI Output
+
+```text
+PawPal+ Daily Schedule
+========================================
+Task                Priority    Time
+----------------------------------------
+Morning Walk        High        08:00
+Medication          High        10:00
+Feeding             Medium      07:00
+Grooming            Low         08:00
+========================================
+Tasks sorted by priority, then time.
+```
+
+## Formatting Features
+
+I updated the app.py and inlcluded the following indicator emojis.
+
+functions used:
+format_task_type() , format_priority(), format_status()
+
+Task-Type Emoji: 🐕 Exercise, 🍖 Feeding, 💊 Medication, and 🛁 Grooming.
+Priority: 🔴 High, 🟡 Medium, and 🟢 Low
+Completion Indicators: ✅ Completed and ⏳ Pending
+
+```
+
 **Screenshot or video** _(optional)_: <!-- Insert a screenshot or link to a demo video here -->
+```

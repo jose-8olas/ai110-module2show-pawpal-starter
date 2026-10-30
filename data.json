@@ -1,0 +1,59 @@
+{
+    "owner_id": "O001",
+    "name": "Jordan",
+    "preferences": {
+        "preferred_start": "08:00"
+    },
+    "pets": [
+        {
+            "pet_id": "P001",
+            "name": "Mochi",
+            "species": "dog",
+            "tasks": [
+                {
+                    "title": "Morning walk",
+                    "task_type": "Feeding",
+                    "duration": 20,
+                    "priority": "high",
+                    "time": "08:00",
+                    "frequency": "daily",
+                    "completed": true,
+                    "due_date": "2026-10-30"
+                },
+                {
+                    "title": "Morning walk",
+                    "task_type": "Feeding",
+                    "duration": 20,
+                    "priority": "high",
+                    "time": "08:00",
+                    "frequency": "daily",
+                    "completed": false,
+                    "due_date": "2026-10-31"
+                }
+            ]
+        },
+        {
+            "pet_id": "P002",
+            "name": "Max",
+            "species": "dog",
+            "tasks": [
+                {
+                    "title": "MMMM",
+                    "task_type": "Grooming",
+                    "duration": 20,
+                    "priority": "high",
+                    "time": "08:00",
+                    "frequency": "daily",
+                    "completed": false,
+                    "due_date": "2026-10-30"
+                }
+            ]
+        },
+        {
+            "pet_id": "P003",
+            "name": "Mochi",
+            "species": "dog",
+            "tasks": []
+        }
+    ]
+}

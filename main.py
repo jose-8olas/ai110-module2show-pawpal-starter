@@ -1,9 +1,11 @@
 
 from pawpal_system import Owner, Pet, Task, Scheduler
+from datetime import date
 
 
 def main():
     """Create pet-care tasks and test scheduling features."""
+
     owner = Owner(
         owner_id="O001",
         name="Alex",
@@ -39,6 +41,17 @@ def main():
         priority="High",
         time="08:30",
         frequency="daily"
+    ))
+
+    # Add a weekly recurring task.
+    buddy.add_task(Task(
+        title="Weekly bath",
+        task_type="Grooming",
+        duration=30,
+        priority="Medium",
+        time="09:00",
+        frequency="weekly",
+        due_date=date(2026, 10, 30)
     ))
 
     owner.add_pet(buddy)
@@ -107,19 +120,26 @@ def main():
     else:
         print("No same-time conflicts detected.")
 
-    # Test recurring tasks.
-    print("\nRecurring Task Test")
-    print("===================")
+    # Test weekly recurring tasks.
+    print("\nWeekly Recurring Task Test")
+    print("==========================")
 
-    morning_walk = buddy.tasks[0]
-    next_task = scheduler.complete_task(owner, morning_walk)
+    weekly_task = buddy.tasks[-1]
+
+    next_task = scheduler.complete_task(owner, weekly_task)
 
     if next_task is not None:
-        print(f"Completed: {morning_walk.title}")
-        print(f"Original date: {morning_walk.due_date}")
+        print(f"Completed: {weekly_task.title}")
+        print(f"Original date: {weekly_task.due_date}")
         print(f"Next occurrence: {next_task.due_date}")
         print(f"Frequency: {next_task.frequency}")
         print(f"New task completed: {next_task.completed}")
+
+        print("\nVerifying original and new tasks:")
+        print(f"Original completed: {weekly_task.completed}")
+        print(f"Original still exists: {weekly_task in buddy.tasks}")
+        print(f"New task exists: {next_task in buddy.tasks}")
+
     else:
         print("Task could not be completed or has no recurrence.")
 

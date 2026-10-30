@@ -1,6 +1,7 @@
 
+import json
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 
 @dataclass
@@ -73,6 +74,77 @@ class Owner:
             for task in pet.get_tasks()
         ]
 
+    def save_to_json(self, filename: str = "data.json") -> None:
+        """Save owner, pets, and tasks to a JSON file."""
+
+        data = {
+            "owner_id": self.owner_id,
+            "name": self.name,
+            "preferences": self.preferences,
+            "pets": []
+        }
+
+        for pet in self.pets:
+            pet_data = {
+                "pet_id": pet.pet_id,
+                "name": pet.name,
+                "species": pet.species,
+                "tasks": []
+            }
+
+            for task in pet.tasks:
+                task_data = {
+                    "title": task.title,
+                    "task_type": task.task_type,
+                    "duration": task.duration,
+                    "priority": task.priority,
+                    "time": task.time,
+                    "frequency": task.frequency,
+                    "completed": task.completed,
+                    "due_date": task.due_date.isoformat()
+                }
+
+                pet_data["tasks"].append(task_data)
+
+            data["pets"].append(pet_data)
+
+        with open(filename, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=4)
+
+    def load_from_json(self, filename: str = "data.json") -> None:
+        """Load owner, pets, and tasks from a JSON file."""
+
+        with open(filename, "r", encoding="utf-8") as file:
+            data = json.load(file)
+
+        self.owner_id = data["owner_id"]
+        self.name = data["name"]
+        self.preferences = data.get("preferences", {})
+        self.pets = []
+
+        for pet_data in data["pets"]:
+            pet = Pet(
+                pet_id=pet_data["pet_id"],
+                name=pet_data["name"],
+                species=pet_data["species"]
+            )
+
+            for task_data in pet_data["tasks"]:
+                task = Task(
+                    title=task_data["title"],
+                    task_type=task_data["task_type"],
+                    duration=task_data["duration"],
+                    priority=task_data["priority"],
+                    time=task_data["time"],
+                    frequency=task_data["frequency"],
+                    completed=task_data["completed"],
+                    due_date=date.fromisoformat(task_data["due_date"])
+                )
+
+                pet.add_task(task)
+
+            self.add_pet(pet)
+
 
 class Scheduler:
     """Organize tasks into a daily care schedule."""
@@ -92,8 +164,27 @@ class Scheduler:
         return self.tasks.copy()
 
     def sort_by_time(self) -> list[Task]:
-        """Return tasks sorted by their scheduled time."""
-        return sorted(self.tasks, key=lambda task: task.time)
+        """Return tasks sorted by scheduled time."""
+        return sorted(
+            self.tasks,
+            key=lambda task: task.time
+        )
+
+    def sort_by_priority(self) -> list[Task]:
+        """Sort tasks by priority first, then by time."""
+        priority_order = {
+            "high": 1,
+            "medium": 2,
+            "low": 3
+        }
+
+        return sorted(
+            self.tasks,
+            key=lambda task: (
+                priority_order.get(task.priority.lower(), 4),
+                task.time
+            )
+        )
 
     def filter_by_status(self, completed: bool) -> list[Task]:
         """Return tasks matching the requested completion status."""
@@ -116,25 +207,37 @@ class Scheduler:
         self, owner: Owner, task: Task
     ) -> Task | None:
         """Complete a task and create its next recurring occurrence."""
+
         pet_found = None
 
+        # Find the pet that owns the task.
         for pet in owner.pets:
             if task in pet.tasks:
                 pet_found = pet
                 break
 
+        # Make sure the task belongs to this owner.
         if pet_found is None:
             return None
 
+        # Prevent duplicate recurring tasks.
+        if task.completed:
+            return None
+
+        # Mark the original task as completed.
         task.mark_completed()
 
+        # Calculate the next occurrence.
         if task.frequency.lower() == "daily":
             next_date = task.due_date + timedelta(days=1)
+
         elif task.frequency.lower() == "weekly":
             next_date = task.due_date + timedelta(days=7)
+
         else:
             return None
 
+        # Create a separate task with the original details.
         next_task = Task(
             title=task.title,
             task_type=task.task_type,
@@ -146,6 +249,7 @@ class Scheduler:
             due_date=next_date
         )
 
+        # Add the new task to the pet and scheduler.
         pet_found.add_task(next_task)
         self.tasks.append(next_task)
 
@@ -158,12 +262,12 @@ class Scheduler:
 
         for task in self.sort_by_time():
             total_duration += task.duration
+
             if total_duration > self.available_time:
                 conflicts.append(task)
 
         return conflicts
 
-    
     def detect_time_conflicts(self) -> list[str]:
         """Return warnings for incomplete tasks scheduled at the same time."""
         warnings = []
@@ -177,6 +281,7 @@ class Scheduler:
 
             if key in seen_times:
                 other_task = seen_times[key]
+
                 warnings.append(
                     f"Conflict: '{other_task.title}' and "
                     f"'{task.title}' are both scheduled for "
@@ -187,10 +292,56 @@ class Scheduler:
 
         return warnings
 
-
     def generate_daily_plan(self) -> list[Task]:
-        """Generate a time-ordered plan of incomplete tasks."""
+        """Generate a daily plan sorted by priority and time."""
         return [
-            task for task in self.sort_by_time()
+            task for task in self.sort_by_priority()
             if not task.completed
         ]
+
+    def find_next_available_slot(
+        self,
+        requested_date: date,
+        start_time: str,
+        duration: int
+    ) -> str | None:
+        """Find the earliest available time slot for a task."""
+
+        if duration <= 0:
+            raise ValueError("Duration must be greater than zero.")
+
+        current_time = datetime.strptime(
+            start_time, "%H:%M"
+        )
+
+        daily_tasks = sorted(
+            [
+                task for task in self.tasks
+                if task.due_date == requested_date
+                and not task.completed
+            ],
+            key=lambda task: task.time
+        )
+
+        for task in daily_tasks:
+            task_start = datetime.strptime(
+                task.time, "%H:%M"
+            )
+
+            task_end = task_start + timedelta(
+                minutes=task.duration
+            )
+
+            requested_end = current_time + timedelta(
+                minutes=duration
+            )
+
+            if current_time < task_end and requested_end > task_start:
+                current_time = task_end
+
+        if current_time + timedelta(minutes=duration) > datetime.strptime(
+            "23:59", "%H:%M"
+        ):
+            return None
+
+        return current_time.strftime("%H:%M")
