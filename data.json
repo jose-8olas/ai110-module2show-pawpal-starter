@@ -54,6 +54,12 @@
             "name": "Mochi",
             "species": "dog",
             "tasks": []
+        },
+        {
+            "pet_id": "P004",
+            "name": "Mochi",
+            "species": "dog",
+            "tasks": []
         }
     ]
 }
