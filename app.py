@@ -15,32 +15,35 @@ st.title("🐾 PawPal+")
 
 st.markdown(
     """
-Welcome to the PawPal+ starter app.
+Welcome to PawPal+!
 
-This app helps pet owners organize daily care tasks and
-generate a schedule using the PawPal+ backend classes.
+Organize your pets' care tasks, manage recurring activities,
+and generate a daily schedule with conflict warnings.
 """
 )
 
 with st.expander("Scenario", expanded=True):
     st.markdown(
         """
-**PawPal+** is a pet care planning assistant. It helps a pet owner plan care tasks
-for their pet(s) based on constraints like time, priority, and preferences.
+**PawPal+** is a pet care planning assistant. It helps pet owners
+plan care tasks for their pets based on duration, priority, and
+available time.
 
 The app connects the Streamlit interface to the Owner, Pet, Task,
 and Scheduler classes.
 """
     )
 
-with st.expander("What you need to build", expanded=True):
+with st.expander("Features", expanded=False):
     st.markdown(
         """
-At minimum, the system should:
-- Represent pet care tasks (what needs to happen, how long it takes, priority)
-- Represent the pet and the owner (basic info and preferences)
-- Build a plan/schedule for a day that chooses and orders tasks based on constraints
-- Explain the plan and when each task happens
+- Add and manage pets.
+- Create pet care tasks with duration, priority, and scheduled time.
+- Sort tasks by scheduled time.
+- Filter the daily plan to incomplete tasks.
+- Detect tasks scheduled for the same date and time.
+- Identify tasks that exceed the available time budget.
+- Support daily and weekly recurring tasks through the backend.
 """
     )
 
@@ -58,8 +61,8 @@ if "owner" not in st.session_state:
 owner = st.session_state["owner"]
 
 
-# Keep the original quick demo inputs.
-st.subheader("Quick Demo Inputs")
+# Pet input section.
+st.subheader("Add a Pet")
 
 owner.name = st.text_input(
     "Owner name",
@@ -93,19 +96,23 @@ if st.button("Add pet"):
         st.error("Please enter a pet name.")
 
 
-# Display pets stored in the Owner object.
+# Display pets belonging to the owner.
+st.subheader("Your Pets")
+
 if owner.pets:
-    st.write("Current pets:")
     for pet in owner.pets:
-        st.write(f"🐾 {pet.name} — {pet.species.title()}")
+        st.write(f"🐾 **{pet.name}** — {pet.species.title()}")
 else:
     st.info("No pets yet. Add one above.")
 
 
-st.markdown("### Tasks")
+st.divider()
+
+
+# Task input section.
+st.subheader("Tasks")
 st.caption(
-    "Add a few tasks. Tasks are stored in the backend and associated "
-    "with the selected pet."
+    "Add care tasks and associate each task with a pet."
 )
 
 if owner.pets:
@@ -115,7 +122,8 @@ if owner.pets:
         format_func=lambda pet_id: next(
             pet.name for pet in owner.pets
             if pet.pet_id == pet_id
-        )
+        ),
+        key="selected_pet_id"
     )
 
     col1, col2, col3 = st.columns(3)
@@ -123,7 +131,8 @@ if owner.pets:
     with col1:
         task_title = st.text_input(
             "Task title",
-            value="Morning walk"
+            value="Morning walk",
+            key="task_title"
         )
 
     with col2:
@@ -131,29 +140,34 @@ if owner.pets:
             "Duration (minutes)",
             min_value=1,
             max_value=240,
-            value=20
+            value=20,
+            key="task_duration"
         )
 
     with col3:
         priority = st.selectbox(
             "Priority",
             ["low", "medium", "high"],
-            index=2
+            index=2,
+            key="task_priority"
         )
 
     task_type = st.selectbox(
         "Task type",
-        ["Feeding", "Exercise", "Grooming", "Medication", "Other"]
+        ["Feeding", "Exercise", "Grooming", "Medication", "Other"],
+        key="task_type"
     )
 
     task_time = st.time_input(
         "Task time",
-        value=time(8, 0)
+        value=time(8, 0),
+        key="task_time"
     )
 
     frequency = st.selectbox(
         "Frequency",
-        ["daily", "weekly", "as needed"]
+        ["daily", "weekly", "as needed"],
+        key="task_frequency"
     )
 
     if st.button("Add task"):
@@ -173,6 +187,7 @@ if owner.pets:
             )
 
             selected_pet.add_task(task)
+
             st.success(
                 f"Added '{task.title}' to {selected_pet.name}."
             )
@@ -182,65 +197,118 @@ else:
     st.info("Add a pet before adding tasks.")
 
 
-# Keep the original table approach: dictionaries are used for display.
+# Display all existing tasks.
+st.subheader("All Tasks")
+
 task_rows = []
 
 for pet in owner.pets:
     for task in pet.get_tasks():
         task_rows.append({
             "Pet": pet.name,
-            "title": task.title,
-            "duration_minutes": task.duration,
-            "priority": task.priority,
-            "time": task.time,
-            "type": task.task_type,
-            "frequency": task.frequency,
-            "completed": task.completed
+            "Task": task.title,
+            "Duration (min)": task.duration,
+            "Priority": task.priority,
+            "Time": task.time,
+            "Type": task.task_type,
+            "Frequency": task.frequency,
+            "Completed": task.completed
         })
 
 if task_rows:
-    st.write("Current tasks:")
     st.table(task_rows)
 else:
-    st.info("No tasks yet. Add one above.")
+    st.info("No tasks yet. Add a task above.")
 
 
 st.divider()
 
+
+# Build a daily schedule using the Scheduler class.
 st.subheader("Build Schedule")
 st.caption(
-    "Generate a daily schedule using your Scheduler class."
+    "Generate a sorted daily plan and check for scheduling conflicts."
 )
 
 available_time = st.number_input(
     "Available time (minutes)",
     min_value=1,
     max_value=1440,
-    value=60
+    value=60,
+    key="available_time"
 )
 
 if st.button("Generate schedule"):
-    scheduler = Scheduler(available_time=int(available_time))
+    scheduler = Scheduler(
+        available_time=int(available_time)
+    )
     scheduler.get_tasks_from_owner(owner)
 
-    daily_plan = scheduler.generate_daily_plan()
+    # Sort tasks by their scheduled time.
+    sorted_tasks = scheduler.sort_by_time()
+
+    # Keep only incomplete tasks in the daily plan.
+    daily_plan = [
+        task for task in sorted_tasks
+        if not task.completed
+    ]
 
     if daily_plan:
         st.markdown("### Today's Schedule")
 
+        schedule_rows = []
+
         for task in daily_plan:
-            st.write(
-                f"**{task.time}** — {task.title} "
-                f"({task.duration} min, {task.priority} priority)"
+            pet_name_for_task = next(
+                (
+                    pet.name
+                    for pet in owner.pets
+                    if task in pet.get_tasks()
+                ),
+                "Unknown"
             )
+
+            schedule_rows.append({
+                "Time": task.time,
+                "Pet": pet_name_for_task,
+                "Task": task.title,
+                "Duration (min)": task.duration,
+                "Priority": task.priority,
+                "Type": task.task_type
+            })
+
+        st.table(schedule_rows)
     else:
         st.info("There are no incomplete tasks to schedule.")
 
-    conflicts = scheduler.detect_conflicts()
+    # Detect tasks scheduled for the same date and time.
+    time_conflicts = scheduler.detect_time_conflicts()
 
-    if conflicts:
-        st.warning("Some tasks exceed the available time budget.")
-        for task in conflicts:
+    st.markdown("### Same-Time Conflict Check")
+
+    if time_conflicts:
+        st.warning(
+            "Scheduling conflicts found. Review the tasks below "
+            "to avoid scheduling care activities at the same time."
+        )
+
+        for conflict in time_conflicts:
+            st.write(f"⚠️ {conflict}")
+    else:
+        st.success("No same-time scheduling conflicts detected.")
+
+    # Check tasks against the available-time budget.
+    budget_conflicts = scheduler.detect_conflicts()
+
+    st.markdown("### Available-Time Check")
+
+    if budget_conflicts:
+        st.warning(
+            "Some tasks exceed the available time budget. "
+            "Consider adjusting your schedule."
+        )
+
+        for task in budget_conflicts:
             st.write(f"- {task.title}")
     else:
         st.success(

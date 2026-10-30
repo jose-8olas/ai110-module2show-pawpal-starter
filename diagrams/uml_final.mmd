@@ -1,0 +1,51 @@
+
+classDiagram
+    class Task {
+        +str title
+        +str task_type
+        +int duration
+        +str priority
+        +str time
+        +str frequency
+        +bool completed
+        +date due_date
+        +mark_completed() None
+    }
+
+    class Pet {
+        +str pet_id
+        +str name
+        +str species
+        +list~Task~ tasks
+        +add_task(task) None
+        +get_tasks() list~Task~
+    }
+
+    class Owner {
+        +str owner_id
+        +str name
+        +dict preferences
+        +list~Pet~ pets
+        +add_pet(pet) None
+        +remove_pet(pet_id) None
+        +get_all_tasks() list~Task~
+    }
+
+    class Scheduler {
+        +int available_time
+        +list~Task~ tasks
+        +schedule_task(task) None
+        +get_tasks_from_owner(owner) list~Task~
+        +sort_by_time() list~Task~
+        +filter_by_status(completed) list~Task~
+        +filter_by_pet(owner, pet_id) list~Task~
+        +complete_task(owner, task) Task or None
+        +detect_conflicts() list~Task~
+        +detect_time_conflicts() list~str~
+        +generate_daily_plan() list~Task~
+    }
+
+    Owner "1" *-- "0..*" Pet : owns
+    Pet "1" *-- "0..*" Task : contains
+    Scheduler "1" o-- "0..*" Task : organizes
+    Scheduler ..> Owner : retrieves tasks from
